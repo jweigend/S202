@@ -1,0 +1,22 @@
+# Maven
+target/
+*.class
+*.jar
+*.war
+# Exception: project-local Maven repository ships its jars
+!libs/**/*.jar
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+*.log
+docs/latex/ICSOFT_2026_ABSTRACT.pdf
