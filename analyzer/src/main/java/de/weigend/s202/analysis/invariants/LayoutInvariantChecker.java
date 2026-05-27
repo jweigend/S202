@@ -58,7 +58,7 @@ import java.util.Set;
  *       P_A → P_B where weight(P_A→P_B) &gt; weight(P_B→P_A), the dominant
  *       direction means P_A depends on P_B and must be at a strictly higher
  *       level: level(P_A) &gt; level(P_B).</li>
- *   <li><b>R5 ViolationFlag</b> — every dependency's classification
+ *   <li><b>R4 ViolationFlag</b> — every dependency's classification
  *       (NORMAL / VIOLATION / INTRA_SCC) must match what the current level
  *       and SCC state say it should be.</li>
  * </ul>
@@ -117,7 +117,7 @@ public final class LayoutInvariantChecker {
 
         List<InvariantFinding> findings = new ArrayList<>();
         int dependencyCount = checkLevelInversionAcrossNonBackEdge(
-                classes, classToScc, backEdges, brokenSccIds, findings);
+                classes, classToScc, backEdges, brokenSccIds, domainModel, findings);
         checkPackageEdgeDirection(packages, domainModel.getPackageEdgeWeights(), domainModel, findings);
         checkPkgSccEqualLevel(classes, packages, rawModel, domainModel, classToScc, backEdges, findings);
         checkViolationFlagConsistency(classes, classGraph, classToScc, findings);
@@ -191,6 +191,7 @@ public final class LayoutInvariantChecker {
             Map<String, StronglyConnectedComponent> classToScc,
             Set<SCCBreaker.Edge> backEdges,
             Set<Integer> brokenSccIds,
+            DomainModel domainModel,
             List<InvariantFinding> findings) {
         int depCount = 0;
         for (CalculatedElementInfo from : classes.values()) {
@@ -202,6 +203,7 @@ public final class LayoutInvariantChecker {
 
                 if (from.architectureLevel > to.architectureLevel) continue;
                 if (backEdges.contains(new SCCBreaker.Edge(from.fullName, to.fullName))) continue;
+                if (domainModel.isClassBackEdge(from.fullName, to.fullName)) continue;
 
                 StronglyConnectedComponent fromScc = classToScc.get(from.fullName);
                 StronglyConnectedComponent toScc = classToScc.get(to.fullName);
@@ -402,7 +404,7 @@ public final class LayoutInvariantChecker {
         return pkgA.startsWith(pkgB + ".") || pkgB.startsWith(pkgA + ".");
     }
 
-    // ---------------------------------------------------------------- R5
+    // ---------------------------------------------------------------- R4
 
     /**
      * Drift detector between the renderer's edge classification and the raw
@@ -462,7 +464,7 @@ public final class LayoutInvariantChecker {
                 if (classified.type == expected) continue;
 
                 findings.add(new InvariantFinding(
-                        "R5",
+                        "R4",
                         "EdgeClassification type=" + classified.type
                                 + " disagrees with current levels (expected " + expected + ").",
                         from.fullName, to.fullName,

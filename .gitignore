@@ -3,8 +3,6 @@ target/
 *.class
 *.jar
 *.war
-# Exception: project-local Maven repository ships its jars
-!libs/**/*.jar
 
 # IDE
 .idea/
