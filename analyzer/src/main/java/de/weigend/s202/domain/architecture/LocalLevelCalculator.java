@@ -38,20 +38,11 @@ import java.util.TreeMap;
  * only dependencies whose source <em>and</em> target both live inside the parent's
  * direct children contribute to the sibling-only weighted graph.
  *
- * <p>Cycle breaking follows the same two-step deterministic algorithm used for
- * packages in {@link LevelCalculator#calculatePackageLevels}:
- * <ol>
- *   <li><b>Asymmetric cycle</b> — one direction carries more weight than the
- *       other.  Cut the single min-weight edge (alphabetically first on ties)
- *       and restart.</li>
- *   <li><b>Symmetric cycle</b> — all internal edges share the same weight; no
- *       architecturally justified direction exists.  Remove <em>all</em> internal
- *       edges.  The local level of each former cycle member is then determined
- *       solely by dependencies outside the cycle; nodes with no such deps stay at
- *       the same level.</li>
- * </ol>
- *
- * <p>There are no heuristics, rank scores, or thresholds.
+ * <p>Class back-edges recorded by {@link LevelCalculator} (Step 4) are excluded
+ * when building the sibling graph.  Because the class graph after Step 4 is a
+ * DAG, the aggregated sibling graph is acyclic by construction and no
+ * cycle-breaking fires in practice.  The rank-score SCC-break in
+ * {@link #computeLayers} is retained as a safety net.
  */
 public class LocalLevelCalculator {
 
@@ -108,6 +99,9 @@ public class LocalLevelCalculator {
                 String toSibling = containingSibling(dep, siblingFqns);
                 if (toSibling == null || toSibling.equals(fromSibling)) {
                     continue; // out of parent OR intra-sibling
+                }
+                if (domain.isClassBackEdge(cls.fullName, dep)) {
+                    continue; // already cut in Step 4 — keep local ordering consistent
                 }
                 int w = callCount(cls.fullName, dep, rawModel);
                 weights.get(fromSibling).merge(toSibling, w, Integer::sum);
